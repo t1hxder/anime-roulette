@@ -1,0 +1,720 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEXT WATCH · anime roulette</title>
+<meta name="description" content="Tell it what you've watched, then pull a random anime you haven't. Filter by length, format and genre, or ask for something like a show you already love.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="NEXT WATCH">
+<meta property="og:description" content="Stop scrolling. Pull a random anime you haven't seen yet.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23F2F1EC'/%3E%3Cpath d='M6 25V7h4l6 11V7h4v18h-4L10 14v11z' fill='%23E5322B'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#F2F1EC;
+  --ink:#14110F;
+  --red:#E5322B;
+  --cyan:#2BB3C8;
+  --smoke:rgba(20,17,15,.55);
+  --rule:rgba(20,17,15,.18);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+/* halftone paper texture */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(var(--ink) 1px, transparent 1.1px);
+  background-size:6px 6px;opacity:.07;
+}
+.wrap{position:relative;z-index:1;max-width:940px;margin:0 auto;padding:22px 18px 80px}
+
+/* ---------- type ---------- */
+.display{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.92}
+.mono{font-family:"IBM Plex Mono",monospace}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--smoke)}
+
+/* misregistered print title */
+.logo{position:relative;display:inline-block;font-size:clamp(38px,9vw,74px)}
+.logo span{position:absolute;inset:0;z-index:-1}
+.logo .c{color:var(--cyan);transform:translate(-3px,2px)}
+.logo .m{color:var(--red);transform:translate(3px,-2px)}
+
+/* ---------- shell ---------- */
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;
+  border-bottom:3px solid var(--ink);padding-bottom:14px;margin-bottom:22px}
+.tally{text-align:right;flex-shrink:0}
+.tally b{font-family:"Anton",sans-serif;font-size:30px;display:block;line-height:1}
+.linkbtn{background:none;border:none;padding:0;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--smoke);cursor:pointer;border-bottom:1px solid var(--rule)}
+.linkbtn:hover{color:var(--red);border-color:var(--red)}
+
+/* ---------- controls ---------- */
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px}
+label.f{display:block}
+label.f .eyebrow{display:block;margin-bottom:6px}
+select,input[type=text]{
+  width:100%;background:transparent;border:2px solid var(--ink);border-radius:0;
+  padding:9px 10px;font-family:"IBM Plex Sans",sans-serif;font-size:14px;color:var(--ink);
+  appearance:none;cursor:pointer}
+select:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+.toggle{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;user-select:none;padding-top:22px}
+.toggle input{width:16px;height:16px;accent-color:var(--red);cursor:pointer}
+
+/* ---------- seed picker ---------- */
+.seedbar{border:3px solid var(--ink);padding:13px 15px;margin-bottom:18px;background:var(--paper);
+  box-shadow:6px 6px 0 var(--cyan)}
+.seedbar .eyebrow{display:block;margin-bottom:7px}
+.seedwrap{position:relative}
+.seedwrap input{width:100%;background:transparent;border:none;border-bottom:2px solid var(--ink);
+  padding:5px 2px;font-family:"Anton",sans-serif;font-size:clamp(19px,3.4vw,26px);text-transform:uppercase;
+  letter-spacing:.01em;color:var(--ink)}
+.seedwrap input::placeholder{font-family:"IBM Plex Sans",sans-serif;font-size:14px;text-transform:none;
+  letter-spacing:0;color:var(--smoke)}
+.drop{position:absolute;left:0;right:0;top:100%;z-index:9;background:var(--paper);border:2px solid var(--ink);
+  border-top:none;max-height:280px;overflow-y:auto;box-shadow:6px 6px 0 rgba(20,17,15,.25)}
+.drop button{display:flex;gap:10px;align-items:center;width:100%;background:none;border:none;
+  border-bottom:1px solid var(--rule);padding:7px 9px;cursor:pointer;text-align:left;font:inherit}
+.drop button:hover,.drop button:focus-visible{background:var(--ink);color:var(--paper)}
+.drop img{width:34px;height:48px;object-fit:cover;flex-shrink:0;border:1px solid var(--rule)}
+.drop small{display:block;font-family:"IBM Plex Mono",monospace;font-size:10.5px;opacity:.65}
+.drop .msg{padding:10px;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--smoke)}
+#seedChip:not(:empty){margin-top:10px}
+.seedon{display:inline-flex;align-items:center;gap:9px;background:var(--ink);color:var(--paper);
+  padding:5px 7px 5px 11px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.06em}
+.seedon button{background:none;border:none;color:var(--paper);font-size:16px;line-height:1;cursor:pointer;padding:0 4px}
+.seedon button:hover{color:var(--red)}
+
+/* ---------- the pull ---------- */
+.pull{
+  width:100%;border:3px solid var(--ink);background:var(--red);color:var(--paper);
+  font-family:"Anton",sans-serif;font-size:clamp(24px,5vw,34px);text-transform:uppercase;letter-spacing:.03em;
+  padding:16px;cursor:pointer;box-shadow:7px 7px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+.pull:hover{transform:translate(2px,2px);box-shadow:5px 5px 0 var(--ink)}
+.pull:active{transform:translate(7px,7px);box-shadow:0 0 0 var(--ink)}
+.pull[disabled]{background:var(--rule);color:var(--smoke);cursor:wait;box-shadow:none;transform:none}
+
+/* ---------- result card ---------- */
+.stage{margin-top:26px;min-height:80px}
+.card{display:grid;grid-template-columns:210px 1fr;gap:22px;border:3px solid var(--ink);background:var(--paper);padding:18px;
+  box-shadow:9px 9px 0 var(--ink)}
+.card img{width:100%;display:block;border:2px solid var(--ink);aspect-ratio:2/3;object-fit:cover;background:var(--rule)}
+.title{font-size:clamp(26px,4.6vw,42px);margin:2px 0 4px}
+.alt{font-size:13px;color:var(--smoke);margin-bottom:12px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  border:1.5px solid var(--ink);padding:3px 7px}
+.chip.hot{background:var(--ink);color:var(--paper)}
+.syn{font-size:14px;line-height:1.55;color:#2a2521;margin:0 0 16px;
+  display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.acts{display:flex;flex-wrap:wrap;gap:9px}
+.btn{border:2px solid var(--ink);background:transparent;padding:8px 13px;cursor:pointer;
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase}
+.btn:hover{background:var(--ink);color:var(--paper)}
+.btn.solid{background:var(--ink);color:var(--paper)}
+.btn.solid:hover{background:var(--red);border-color:var(--red)}
+
+/* impact reveal */
+@keyframes slam{0%{transform:scale(.86) rotate(-2.2deg);opacity:0}62%{transform:scale(1.02) rotate(.6deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+.slam{animation:slam .3s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes burst{from{transform:scale(.3);opacity:.85}to{transform:scale(2.4);opacity:0}}
+.burst{position:absolute;left:50%;top:50%;width:220px;height:220px;margin:-110px 0 0 -110px;pointer-events:none;
+  border-radius:50%;border:12px solid var(--cyan);animation:burst .45s ease-out forwards}
+
+/* ---------- empty / status ---------- */
+.note{border:2px dashed var(--rule);padding:26px 20px;text-align:center;color:var(--smoke);font-size:14px}
+.note b{display:block;font-family:"Anton",sans-serif;font-size:22px;color:var(--ink);text-transform:uppercase;margin-bottom:6px}
+
+.tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.tab{border:2px solid var(--ink);background:transparent;padding:6px 11px;cursor:pointer;
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.tab:hover{background:var(--ink);color:var(--paper)}
+.tab.on{background:var(--ink);color:var(--paper)}
+.tab.danger{margin-left:auto;border-color:var(--red);color:var(--red)}
+.tab.danger:hover{background:var(--red);color:var(--paper)}
+
+.importrow{display:flex;gap:9px;align-items:center;margin-bottom:14px;padding-bottom:14px;border-bottom:2px solid var(--ink)}
+.importrow input{flex:1;cursor:text}
+.importrow .hint{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.06em;color:var(--smoke)}
+.copied{background:var(--cyan)!important;color:var(--ink)!important}
+
+/* ---------- onboarding + modal ---------- */
+.scrim{position:fixed;inset:0;background:rgba(20,17,15,.72);z-index:20;display:flex;align-items:flex-start;
+  justify-content:center;padding:22px;overflow-y:auto}
+.sheet{background:var(--paper);border:3px solid var(--ink);max-width:720px;width:100%;padding:24px;margin:auto;
+  box-shadow:11px 11px 0 var(--red)}
+.sheet h2{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:clamp(26px,5vw,40px);margin:6px 0 6px;line-height:.95}
+.sheet p.lede{font-size:14px;color:var(--smoke);margin:0 0 18px}
+.searchrow{display:flex;gap:9px;margin-bottom:14px}
+.searchrow input{flex:1;cursor:text}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;max-height:330px;overflow-y:auto;padding:2px}
+.tile{border:2px solid var(--ink);background:none;padding:0;cursor:pointer;text-align:left;position:relative;overflow:hidden}
+.tile img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block}
+.tile span{display:block;font-size:10.5px;line-height:1.25;padding:5px 6px 6px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tile.on{background:var(--red);color:var(--paper);border-color:var(--red)}
+.tile.on::after{content:"SEEN";position:absolute;top:6px;right:6px;font-family:"IBM Plex Mono",monospace;
+  font-size:9px;letter-spacing:.1em;background:var(--paper);color:var(--red);padding:2px 4px}
+.sheetfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px;
+  border-top:2px solid var(--ink);padding-top:14px;flex-wrap:wrap}
+.listrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--rule);font-size:14px}
+.bar{height:6px;background:var(--rule);margin-top:12px}
+.bar i{display:block;height:100%;background:var(--red);width:0;transition:width .3s}
+
+@media(max-width:640px){
+  .card{grid-template-columns:1fr}
+  .card img{max-width:190px}
+  .toggle{padding-top:0}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">anime roulette</div>
+      <div class="logo display">NEXT WATCH<span class="c display">NEXT WATCH</span><span class="m display">NEXT WATCH</span></div>
+    </div>
+    <div class="tally">
+      <span class="eyebrow">seen</span>
+      <b id="tally">0</b>
+      <button class="linkbtn" id="openList">edit list</button>
+    </div>
+  </header>
+
+  <div class="seedbar">
+    <span class="eyebrow">recommend something like</span>
+    <div class="seedwrap">
+      <input type="text" id="seedQ" placeholder="pick any anime, or leave blank for top rated" autocomplete="off" spellcheck="false">
+      <div class="drop" id="seedDrop" hidden></div>
+    </div>
+    <div id="seedChip"></div>
+  </div>
+
+  <div class="filters">
+    <label class="f"><span class="eyebrow">length</span>
+      <select id="fLen">
+        <option value="any">any length</option>
+        <option value="movie">one movie</option>
+        <option value="short">short · 1–13 ep</option>
+        <option value="mid">standard · 14–26</option>
+        <option value="long">long · 27+</option>
+      </select>
+    </label>
+    <label class="f"><span class="eyebrow">format</span>
+      <select id="fType">
+        <option value="any">tv or movie</option>
+        <option value="TV">tv series</option>
+        <option value="Movie">movie</option>
+      </select>
+    </label>
+    <label class="f"><span class="eyebrow">genre</span>
+      <select id="fGenre"><option value="any">any genre</option></select>
+    </label>
+    <label class="f"><span class="eyebrow">rating floor</span>
+      <select id="fScore">
+        <option value="0">any rating</option>
+        <option value="7">7.0+</option>
+        <option value="8" selected>8.0+</option>
+        <option value="8.5">8.5+</option>
+      </select>
+    </label>
+    <label class="toggle"><input type="checkbox" id="fStart" checked> first seasons only</label>
+  </div>
+
+  <button class="pull" id="pull">Loading the shelf…</button>
+  <div class="stage" id="stage"></div>
+</div>
+
+<script>
+/* ============ storage shim: works as an artifact, a local file, or neither ============ */
+const mem = {};
+const store = {
+  async get(k){
+    try{ if(window.storage){ const r = await window.storage.get(k); return r ? JSON.parse(r.value) : null; } }catch(e){}
+    try{ const v = localStorage.getItem(k); if(v!=null) return JSON.parse(v); }catch(e){}
+    return mem[k] ?? null;
+  },
+  async set(k,v){
+    mem[k]=v;
+    try{ if(window.storage){ await window.storage.set(k, JSON.stringify(v)); return true; } }catch(e){}
+    try{ localStorage.setItem(k, JSON.stringify(v)); return true; }
+    catch(e){
+      // out of room. the cached pool is disposable; the watched list is not.
+      try{
+        localStorage.removeItem('pool4');
+        localStorage.setItem(k, JSON.stringify(v));
+        console.warn('storage was full, dropped the pool cache to save', k);
+        return true;
+      }catch(e2){ console.error('storage full, could not save', k, e2.name); return false; }
+    }
+  }
+};
+
+/* ============ state ============ */
+let POOL = [];              // every anime we know about
+let seedPool = [];          // recommendations for the chosen seed, when set
+let seedName = '';
+let seedId = null;
+let applySeed = null;       // set by initSeed so boot can seed from a shared link
+let seen = [];              // mal_ids marked watched
+let skipped = [];           // mal_ids marked not interested
+let current = null;
+
+const $ = s => document.querySelector(s);
+const stage = $('#stage'), pullBtn = $('#pull');
+const SEQ = /(season\s*[2-9])|(\b2nd|3rd|[4-9]th\s+season)|(part\s*[2-9])|(\bII+\b)|(final season)|(: ?the movie)/i;
+
+/* ============ data ============ */
+let lastError = null;
+const PAGES = 40;   // 40 × 50 = 2000 titles
+const BATCH = 5;    // pages bundled into one HTTP request
+
+async function loadPool(){
+  const cached = await store.get('pool4');
+  if(cached && Date.now() - cached.at < 864e5 && cached.items?.length){ POOL = cached.items; return; }
+
+  const bar = document.createElement('div');
+  bar.className='bar'; bar.innerHTML='<i></i>'; pullBtn.after(bar);
+  const items = [];
+  POOL = items;  // same reference, so the pool grows live as batches land
+  const wait = ms => new Promise(r=>setTimeout(r,ms));
+
+  // format_in filters server-side, so every row we download is usable
+  const frag = `fragment F on Media{${FIELDS}}`;
+  const page = p => `p${p}:Page(page:${p},perPage:50){media(type:ANIME,sort:SCORE_DESC,isAdult:false,format_in:[TV,TV_SHORT,MOVIE]){...F}}`;
+
+  for(let start=1; start<=PAGES; start+=BATCH){
+    const aliases=[];
+    for(let p=start; p<start+BATCH && p<=PAGES; p++) aliases.push(page(p));
+    const query = `${frag} query{${aliases.join(' ')}}`;
+
+    for(let attempt=0; attempt<3; attempt++){
+      try{
+        const d = await gql(query,{});
+        Object.values(d).forEach(pg => (pg?.media||[]).forEach(a => items.push(slim(a))));
+        lastError = null;
+        break;
+      }catch(e){
+        lastError = e.message;
+        console.warn('batch from page',start,'attempt',attempt,':',e.message);
+        await wait(1500 * Math.pow(2, attempt));
+      }
+    }
+
+    // let the user start pulling as soon as there's anything worth pulling
+    if(items.length && pullBtn.disabled){
+      fillGenres();
+      pullBtn.disabled = false;
+      pullBtn.onclick = draw;
+    }
+    pullBtn.textContent = pullBtn.disabled
+      ? 'Loading the shelf…'
+      : `Pull a title · ${items.length} loaded`;
+    bar.querySelector('i').style.width = Math.min(100,(start+BATCH-1)/PAGES*100)+'%';
+    await wait(300);
+  }
+
+  bar.remove();
+  if(items.length){
+    const ok = await store.set('pool4',{at:Date.now(), items});
+    if(!ok) console.warn('pool not cached; it will reload next visit');
+  }
+}
+
+/* ============ AniList GraphQL ============ */
+const FMT = {TV:'TV', TV_SHORT:'TV', MOVIE:'Movie', OVA:'OVA', ONA:'ONA', SPECIAL:'Special'};
+const FIELDS = `id title{romaji english} coverImage{large} averageScore episodes format seasonYear genres description siteUrl`;
+
+async function gql(query, variables){
+  const r = await fetch('https://graphql.anilist.co',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({query, variables})
+  });
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const j = await r.json();
+  if(j.errors?.length) throw new Error(j.errors[0].message);
+  return j.data;
+}
+
+const slim = a => ({
+  id:a.id,
+  title:a.title?.romaji || a.title?.english,
+  en:a.title?.english,
+  img:a.coverImage?.large,
+  score:a.averageScore ? +(a.averageScore/10).toFixed(1) : null,
+  eps:a.episodes,
+  type:FMT[a.format] || a.format,
+  year:a.seasonYear,
+  genres:a.genres||[],
+  syn:(a.description||'').replace(/<br\s*\/?>/gi,' ').replace(/<[^>]*>/g,'').trim().slice(0,300),
+  url:a.siteUrl
+});
+
+/* ============ filtering ============ */
+function pool(){
+  const len=$('#fLen').value, type=$('#fType').value, genre=$('#fGenre').value,
+        min=parseFloat($('#fScore').value), startOnly=$('#fStart').checked;
+  return (seedPool.length ? seedPool : POOL).filter(a=>{
+    if(seen.includes(a.id) || skipped.includes(a.id)) return false;
+    if(a.type!=='TV' && a.type!=='Movie') return false; // no OVAs, ONAs or specials
+    if(min && (a.score||0) < min) return false;
+    if(type!=='any' && a.type!==type) return false;
+    if(genre!=='any' && !a.genres.includes(genre)) return false;
+    if(startOnly && SEQ.test(a.title)) return false;
+    const e = a.eps;
+    if(len==='movie' && !(a.type==='Movie' || e===1)) return false;
+    if(len==='short' && !(e && e<=13 && a.type!=='Movie')) return false;
+    if(len==='mid'   && !(e && e>13 && e<=26)) return false;
+    if(len==='long'  && !(e && e>26)) return false;
+    return true;
+  });
+}
+
+/* ============ render ============ */
+function draw(){
+  const options = pool();
+  if(!options.length){
+    stage.innerHTML = `<div class="note"><b>nothing left</b>Every match is already on your list. Loosen a filter and pull again.</div>`;
+    return;
+  }
+  current = options[Math.floor(Math.random()*options.length)];
+  const a = current;
+  const runtime = a.type==='Movie' ? 'film' : (a.eps ? a.eps+' ep' : 'ongoing');
+  stage.style.position='relative';
+  stage.innerHTML = `
+    <div class="burst"></div>
+    <article class="card slam">
+      <img src="${a.img||''}" alt="Cover art for ${esc(a.title)}">
+      <div>
+        <h2 class="title display">${esc(a.en||a.title)}</h2>
+        ${a.en && a.en!==a.title ? `<div class="alt mono">${esc(a.title)}</div>`:''}
+        <div class="meta">
+          <span class="chip hot">★ ${a.score??'--'}</span>
+          <span class="chip">${runtime}</span>
+          <span class="chip">${a.type||'?'}</span>
+          ${a.year?`<span class="chip">${a.year}</span>`:''}
+          ${a.genres.slice(0,3).map(g=>`<span class="chip">${esc(g)}</span>`).join('')}
+        </div>
+        <p class="syn">${esc(a.syn||'No synopsis on file.')}</p>
+        <div class="acts">
+          <button class="btn solid" id="again">pull again</button>
+          <button class="btn" id="markSeen">already seen it</button>
+          <button class="btn" id="markSkip">not for me</button>
+          <a class="btn" href="${a.url}" target="_blank" rel="noopener">open on anilist</a>
+        </div>
+      </div>
+    </article>`;
+  setTimeout(()=>stage.querySelector('.burst')?.remove(), 500);
+  $('#again').onclick = draw;
+  $('#markSeen').onclick = ()=>{ seen.push(a.id); save(); draw(); };
+  $('#markSkip').onclick = ()=>{ skipped.push(a.id); save(); draw(); };
+}
+const esc = s => String(s??'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+
+async function save(){
+  const a = await store.set('seen',seen);
+  const b = await store.set('skipped',skipped);
+  $('#tally').textContent = seen.length;
+  if(!a || !b){
+    const t=$('#tally'); t.style.color='var(--red)'; t.title='Could not save to this browser';
+  }
+}
+
+function fillGenres(){
+  const sel=$('#fGenre'), keep=sel.value;
+  const count={};
+  POOL.forEach(a=>a.genres.forEach(g=>count[g]=(count[g]||0)+1));
+  sel.innerHTML='<option value="any">any genre</option>';
+  Object.keys(count).sort().forEach(g=>{
+    const o=document.createElement('option'); o.value=g; o.textContent=g.toLowerCase(); sel.appendChild(o);
+  });
+  if(keep) sel.value=keep; // don't clobber the user's choice on refill
+}
+
+/* ============ seed picker: "recommend something like X" ============ */
+function initSeed(){
+  const input=$('#seedQ'), drop=$('#seedDrop'), chip=$('#seedChip');
+  let timer=null, latest=0;
+
+  const close = ()=>{ drop.hidden=true; drop.innerHTML=''; };
+
+  const suggest = async (q, token)=>{
+    try{
+      const Q = `query($q:String){Page(perPage:8){media(type:ANIME,search:$q,isAdult:false,format_in:[TV,TV_SHORT,MOVIE]){${FIELDS}}}}`;
+      const d = await gql(Q,{q});
+      if(token!==latest) return;
+      const found=(d.Page?.media||[]).map(slim);
+      if(!found.length){ drop.innerHTML='<p class="msg">no matches</p>'; return; }
+      drop.innerHTML='';
+      found.forEach(a=>{
+        const b=document.createElement('button');
+        b.innerHTML=`<img src="${a.img||''}" alt=""><span>${esc(a.en||a.title)}<small>${a.year||''} · ${a.type||''}</small></span>`;
+        b.onclick=()=>choose(a);
+        drop.appendChild(b);
+      });
+    }catch(e){
+      if(token!==latest) return;
+      drop.innerHTML=`<p class="msg">${esc(e.message)}</p>`;
+    }
+  };
+
+  const choose = async a=>{
+    input.value=''; close();
+    seedName = a.en||a.title; seedId = a.id;
+    chip.innerHTML=`<span class="seedon">finding picks like ${esc(seedName)}…</span>`;
+    pullBtn.disabled=true;
+    try{
+      const Q = `query($id:Int){Media(id:$id,type:ANIME){recommendations(sort:RATING_DESC,perPage:30){nodes{mediaRecommendation{${FIELDS}}}}}}`;
+      const d = await gql(Q,{id:a.id});
+      seedPool = (d.Media?.recommendations?.nodes||[])
+        .map(n=>n.mediaRecommendation).filter(Boolean).map(slim);
+    }catch(e){ seedPool=[]; console.error('recommendations failed:',e); }
+    pullBtn.disabled=false;
+
+    if(!seedPool.length){
+      chip.innerHTML=`<span class="seedon">nobody has recommended anything like ${esc(seedName)} <button title="clear">&times;</button></span>`;
+      chip.querySelector('button').onclick=clear;
+      pullBtn.textContent='Pull a title';
+      return;
+    }
+    chip.innerHTML=`<span class="seedon">like ${esc(seedName)} · ${seedPool.length} picks
+      <button class="cp" title="copy a link that opens here">link</button>
+      <button title="clear">&times;</button></span>`;
+    chip.querySelector('.cp').onclick = e=>{
+      const url = `${location.origin}${location.pathname}?like=${seedId}`;
+      navigator.clipboard?.writeText(url).then(()=>{
+        e.target.textContent='copied'; e.target.classList.add('copied');
+        setTimeout(()=>{ e.target.textContent='link'; e.target.classList.remove('copied'); },1600);
+      }).catch(()=>prompt('Copy this link:', url));
+    };
+    chip.querySelectorAll('button')[1].onclick=clear;
+    pullBtn.textContent='Pull something similar';
+    history.replaceState(null,'',`?like=${seedId}`);
+    draw();
+  };
+  applySeed = choose;
+
+  const clear = ()=>{
+    seedPool=[]; seedName=''; seedId=null; chip.innerHTML=''; input.value='';
+    pullBtn.textContent='Pull a title';
+    history.replaceState(null,'',location.pathname);
+    stage.innerHTML=`<div class="note"><b>back to top rated</b>Pulling from the full shelf again.</div>`;
+  };
+
+  input.addEventListener('input',()=>{
+    const q=input.value.trim();
+    clearTimeout(timer); latest++;
+    if(q.length<2){ close(); return; }
+    drop.hidden=false; drop.innerHTML='<p class="msg">searching…</p>';
+    const token=latest;
+    timer=setTimeout(()=>suggest(q,token),300);
+  });
+  input.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
+  document.addEventListener('click',e=>{ if(!e.target.closest('.seedwrap')) close(); });
+}
+
+/* ============ watched-list sheet ============ */
+function openSheet(firstRun){
+  const scrim=document.createElement('div'); scrim.className='scrim';
+  scrim.innerHTML = `
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="eyebrow">${firstRun?'step one':'your list'}</div>
+      <h2>${firstRun?'Mark what you&rsquo;ve already watched':'Watched list'}</h2>
+      <p class="lede">Tap anything you&rsquo;ve seen so it never gets recommended. Search for titles that aren&rsquo;t showing.</p>
+      <div class="importrow">
+        <input type="text" id="alUser" placeholder="AniList username" autocomplete="off" spellcheck="false">
+        <button class="btn" id="alGo">import list</button>
+      </div>
+      <p class="hint" id="alMsg" style="margin:-8px 0 12px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--smoke)">Have an AniList account? Pull in everything you've marked completed.</p>
+      <div class="searchrow">
+        <input type="text" id="q" placeholder="Start typing a title…" autocomplete="off" autocapitalize="off" spellcheck="false">
+      </div>
+      <div class="tabs">
+        <button class="tab on" data-v="browse">browse popular</button>
+        <button class="tab" data-v="mine">your list · <span id="mineN">0</span></button>
+        <button class="tab danger" id="clearAll">clear all</button>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="sheetfoot">
+        <span class="eyebrow"><b id="cnt">${seen.length}</b> marked</span>
+        <button class="pull" style="width:auto;padding:11px 22px;font-size:20px" id="done">${firstRun?'start pulling':'done'}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(scrim);
+
+  const grid = scrim.querySelector('#grid');
+  const render = list => {
+    grid.innerHTML='';
+    list.forEach(a=>{
+      const b=document.createElement('button');
+      b.className='tile'+(seen.includes(a.id)?' on':'');
+      b.innerHTML=`<img src="${a.img||''}" alt=""><span>${esc(a.en||a.title)}</span>`;
+      b.onclick=()=>{
+        const i=seen.indexOf(a.id);
+        i>-1 ? seen.splice(i,1) : seen.push(a.id);
+        b.classList.toggle('on');
+        scrim.querySelector('#cnt').textContent=seen.length;
+        const n=scrim.querySelector('#mineN'); if(n) n.textContent=seen.length;
+        save();
+      };
+      grid.appendChild(b);
+    });
+  };
+  render(POOL.slice(0,40));
+
+  /* ---- tabs: browse vs your list ---- */
+  const mineN = scrim.querySelector('#mineN');
+  const syncCounts = ()=>{
+    mineN.textContent = seen.length;
+    scrim.querySelector('#cnt').textContent = seen.length;
+  };
+  syncCounts();
+
+  const showMine = async ()=>{
+    if(!seen.length){
+      grid.innerHTML='<p class="eyebrow">nothing marked yet. browse or import to get started.</p>';
+      return;
+    }
+    // imported ids have no metadata locally, so fetch them 50 at a time
+    const missing = seen.filter(id=>!POOL.some(p=>p.id===id));
+    if(missing.length) grid.innerHTML=`<p class="eyebrow">loading ${missing.length} titles…</p>`;
+    for(let i=0;i<missing.length;i+=50){
+      try{
+        const Q=`query($ids:[Int]){Page(perPage:50){media(id_in:$ids,type:ANIME){${FIELDS}}}}`;
+        const d=await gql(Q,{ids:missing.slice(i,i+50)});
+        (d.Page?.media||[]).forEach(m=>{ if(!POOL.some(p=>p.id===m.id)) POOL.push(slim(m)); });
+      }catch(e){ console.warn('list fetch failed:',e.message); }
+    }
+    const mine = seen.map(id=>POOL.find(p=>p.id===id)).filter(Boolean);
+    mine.length
+      ? render(mine)
+      : grid.innerHTML='<p class="eyebrow">couldn&rsquo;t load those titles. check your connection.</p>';
+  };
+
+  let view='browse';
+  scrim.querySelectorAll('.tab[data-v]').forEach(t=>{
+    t.onclick=()=>{
+      scrim.querySelectorAll('.tab[data-v]').forEach(x=>x.classList.remove('on'));
+      t.classList.add('on');
+      view=t.dataset.v;
+      view==='mine' ? showMine() : render(POOL.slice(0,40));
+    };
+  });
+
+  scrim.querySelector('#clearAll').onclick=()=>{
+    if(!seen.length) return;
+    if(!confirm(`Remove all ${seen.length} titles from your watched list?`)) return;
+    seen.length=0; save(); syncCounts();
+    view==='mine' ? showMine() : render(POOL.slice(0,40));
+  };
+  const search = async (q, token)=>{
+    try{
+      const SEARCH = `query($q:String){Page(perPage:12){media(type:ANIME,search:$q,isAdult:false){${FIELDS}}}}`;
+      const d = await gql(SEARCH, {q});
+      if(token !== latest) return; // a newer keystroke already won
+      const found = (d.Page?.media||[]).map(slim);
+      found.forEach(f=>{ if(!POOL.some(p=>p.id===f.id)) POOL.push(f); });
+      found.length ? render(found) : grid.innerHTML='<p class="eyebrow">no matches. check the spelling?</p>';
+    }catch(e){
+      if(token !== latest) return;
+      console.error('search failed:',e);
+      grid.innerHTML=`<p class="eyebrow">search failed: ${esc(e.message)}</p>`;
+    }
+  };
+
+  const input = scrim.querySelector('#q');
+
+  // pull a public AniList "completed" list straight into the watched set
+  const alGo = scrim.querySelector('#alGo'), alMsg = scrim.querySelector('#alMsg');
+  alGo.onclick = async ()=>{
+    const name = scrim.querySelector('#alUser').value.trim();
+    if(!name) return;
+    alGo.disabled = true; alMsg.textContent = 'importing…';
+    try{
+      const Q = `query($name:String){MediaListCollection(userName:$name,type:ANIME,status:COMPLETED){lists{entries{media{id}}}}}`;
+      const d = await gql(Q,{name});
+      const ids = (d.MediaListCollection?.lists||[]).flatMap(l=>(l.entries||[]).map(e=>e.media?.id)).filter(Boolean);
+      const before = seen.length;
+      ids.forEach(id=>{ if(!seen.includes(id)) seen.push(id); });
+      save();
+      scrim.querySelector('#cnt').textContent = seen.length;
+      const n2=scrim.querySelector('#mineN'); if(n2) n2.textContent = seen.length;
+      render(POOL.slice(0,40));
+      alMsg.textContent = ids.length
+        ? `imported ${seen.length - before} new titles from ${name}.`
+        : `${name} has nothing marked completed.`;
+    }catch(e){
+      alMsg.textContent = /not found|private/i.test(e.message)
+        ? 'No public list found for that username.'
+        : 'Import failed: '+e.message;
+    }
+    alGo.disabled = false;
+  };
+  scrim.querySelector('#alUser').addEventListener('keydown',e=>{ if(e.key==='Enter') alGo.click(); });
+
+  input.addEventListener('input', ()=>{
+    const q = input.value.trim();
+    clearTimeout(timer);
+    latest++;                                   // invalidates anything still in flight
+    if(q.length < 2){ render(POOL.slice(0,40)); return; }
+    grid.innerHTML = '<p class="eyebrow">searching…</p>';
+    const token = latest;
+    timer = setTimeout(()=>search(q, token), 300); // wait for a pause in typing
+  });
+  setTimeout(()=>input.focus(), 50);
+  scrim.querySelector('#done').onclick=()=>{ scrim.remove(); save(); store.set('onboarded',true); if(firstRun) draw(); };
+}
+
+/* ============ boot ============ */
+(async function(){
+  seen = await store.get('seen') || [];
+  skipped = await store.get('skipped') || [];
+  $('#tally').textContent = seen.length;
+
+  await loadPool();
+
+  if(!POOL.length){
+    pullBtn.textContent = 'Try again';
+    pullBtn.disabled = false;
+    pullBtn.onclick = ()=>location.reload();
+    stage.innerHTML = `<div class="note"><b>couldn&rsquo;t load the shelf</b>
+      ${esc(lastError||'unknown error')}<br><br>
+      AniList may be having a moment. Wait a few seconds and hit try again.</div>`;
+    return;
+  }
+
+  fillGenres();
+  pullBtn.textContent = `Pull a title · ${POOL.length} loaded`;
+  pullBtn.disabled = false;
+  pullBtn.onclick = draw;
+  initSeed();
+  $('#openList').onclick = ()=>openSheet(false);
+  document.querySelectorAll('select,#fStart').forEach(el=>el.addEventListener('change',()=>{ if(current) draw(); }));
+
+  if(!(await store.get('onboarded'))) openSheet(true);
+  else stage.innerHTML = `<div class="note"><b>ready</b>Set your filters, then pull.</div>`;
+
+  // shared link: ?like=<anilist id> opens already seeded on that title
+  const shared = parseInt(new URLSearchParams(location.search).get('like'),10);
+  if(shared && applySeed){
+    try{
+      const d = await gql(`query($id:Int){Media(id:$id,type:ANIME){${FIELDS}}}`,{id:shared});
+      if(d.Media) await applySeed(slim(d.Media));
+    }catch(e){ console.warn('shared seed failed:',e.message); }
+  }
+})();
+pullBtn.disabled = true;
+</script>
