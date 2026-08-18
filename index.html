@@ -21,7 +21,8 @@
   --rule:rgba(20,17,15,.18);
 }
 *{box-sizing:border-box}
-html,body{margin:0;padding:0}
+html,body{margin:0;padding:0;overflow-x:hidden}
+button,select,input,a{touch-action:manipulation} /* kill the double-tap zoom delay */
 body{
   background:var(--paper);
   color:var(--ink);
@@ -104,7 +105,7 @@ select:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid 
 .pull[disabled]{background:var(--rule);color:var(--smoke);cursor:wait;box-shadow:none;transform:none}
 
 /* ---------- result card ---------- */
-.stage{margin-top:26px;min-height:80px}
+.stage{margin-top:26px;min-height:80px;position:relative;overflow:hidden;padding:4px}
 .card{display:grid;grid-template-columns:210px 1fr;gap:22px;border:3px solid var(--ink);background:var(--paper);padding:18px;
   box-shadow:9px 9px 0 var(--ink)}
 .card img{width:100%;display:block;border:2px solid var(--ink);aspect-ratio:2/3;object-fit:cover;background:var(--rule)}
@@ -174,6 +175,10 @@ select:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid 
   .card{grid-template-columns:1fr}
   .card img{max-width:190px}
   .toggle{padding-top:0}
+  .burst{width:140px;height:140px;margin:-70px 0 0 -70px;border-width:8px}
+  .card{box-shadow:5px 5px 0 var(--ink)}
+  .pull{box-shadow:5px 5px 0 var(--ink)}
+  @keyframes slam{0%{transform:scale(.94);opacity:0}100%{transform:scale(1);opacity:1}}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
@@ -393,7 +398,6 @@ function draw(){
   current = options[Math.floor(Math.random()*options.length)];
   const a = current;
   const runtime = a.type==='Movie' ? 'film' : (a.eps ? a.eps+' ep' : 'ongoing');
-  stage.style.position='relative';
   stage.innerHTML = `
     <div class="burst"></div>
     <article class="card slam">
